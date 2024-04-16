@@ -7,13 +7,13 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         csv_path = 'static/data/'
-        self.import_categories(csv_path + 'categories.csv')
-        self.import_genres(csv_path + 'genres.csv')
+        self.import_categories(csv_path + 'category.csv')
+        self.import_genres(csv_path + 'genre.csv')
         self.import_users(csv_path + 'users.csv')
         self.import_titles(csv_path + 'titles.csv')
-        self.import_reviews(csv_path + 'reviews.csv')
+        self.import_reviews(csv_path + 'review.csv')
         self.import_comments(csv_path + 'comments.csv')
-        self.import_genre_titles(csv_path + 'genre_titles.csv')
+        self.import_genre_titles(csv_path + 'genre_title.csv')
 
     def import_categories(self, filename):
         try:

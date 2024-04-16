@@ -25,8 +25,15 @@ class User(AbstractUser):
     bio = models.TextField(blank=True)
     role = models.CharField(
         max_length=10,
-        choices=[('admin', 'Admin'), ('user', 'User')]
+        choices=[('admin', 'Admin'), ('user', 'User')],
+        default='user'
     )
+
+    def is_admin(self):
+        return self.role == 'admin'
+
+    def __str__(self):
+        return self.username
 
 class Review(models.Model):
     title = models.ForeignKey(
