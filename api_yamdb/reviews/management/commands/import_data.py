@@ -1,19 +1,23 @@
 import csv
+import os
+
 from django.core.management.base import BaseCommand
+from django.conf import settings
 from django.utils.dateparse import parse_datetime
+
 from reviews.models import Category, Genre, Title, User, Review, Comment, GenreTitle
 
 class Command(BaseCommand):
 
     def handle(self, *args, **options):
-        csv_path = 'static/data/'
-        self.import_categories(csv_path + 'category.csv')
-        self.import_genres(csv_path + 'genre.csv')
-        self.import_users(csv_path + 'users.csv')
-        self.import_titles(csv_path + 'titles.csv')
-        self.import_reviews(csv_path + 'review.csv')
-        self.import_comments(csv_path + 'comments.csv')
-        self.import_genre_titles(csv_path + 'genre_title.csv')
+        csv_path = settings.CSV_DATA_PATH
+        self.import_categories(os.path.join(csv_path, 'category.csv'))
+        self.import_genres(os.path.join(csv_path, 'genre.csv'))
+        self.import_users(os.path.join(csv_path, 'users.csv'))
+        self.import_titles(os.path.join(csv_path, 'titles.csv'))
+        self.import_reviews(os.path.join(csv_path, 'review.csv'))
+        self.import_comments(os.path.join(csv_path, 'comments.csv'))
+        self.import_genre_titles(os.path.join(csv_path, 'genre_title.csv'))
 
     def import_categories(self, filename):
         try:

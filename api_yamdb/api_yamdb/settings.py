@@ -12,6 +12,8 @@ DEBUG = True
 ALLOWED_HOSTS = ['*']
 AUTH_USER_MODEL = 'reviews.User'
 
+CSV_DATA_PATH = 'static/data/'
+
 # Application definition
 
 INSTALLED_APPS = [
