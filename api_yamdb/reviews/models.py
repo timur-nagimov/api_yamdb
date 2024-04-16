@@ -16,10 +16,7 @@ class Title(models.Model):
         on_delete=models.SET_NULL,
         null=True
     )
-
-class GenreTitle(models.Model):
-    title = models.ForeignKey(Title, on_delete=models.CASCADE)
-    genre = models.ForeignKey(Genre, on_delete=models.CASCADE)
+    genres = models.ManyToManyField(Genre, related_name='titles')
 
 class User(AbstractUser):
     bio = models.TextField(blank=True)

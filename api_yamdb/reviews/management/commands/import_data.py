@@ -5,7 +5,7 @@ from django.core.management.base import BaseCommand
 from django.conf import settings
 from django.utils.dateparse import parse_datetime
 
-from reviews.models import Category, Genre, Title, User, Review, Comment, GenreTitle
+from reviews.models import Category, Genre, Title, User, Review, Comment
 
 class Command(BaseCommand):
 
@@ -130,10 +130,7 @@ class Command(BaseCommand):
                 for row in reader:
                     title = Title.objects.get(id=row['title_id'])
                     genre = Genre.objects.get(id=row['genre_id'])
-                    GenreTitle.objects.update_or_create(
-                        id=row['id'],
-                        defaults={'title': title, 'genre': genre}
-                    )
+                    title.genres.add(genre)
             self.stdout.write(
                 self.style.SUCCESS(
                     'Импортирован genre_titles.csv'
