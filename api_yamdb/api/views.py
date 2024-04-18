@@ -1,13 +1,13 @@
-from .email_utils import email_generator
-from .permissions import IsAdminOrDeny
 from django.shortcuts import get_object_or_404
+from django.contrib.auth import get_user_model
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status, mixins, viewsets, filters, permissions
 from rest_framework.viewsets import ModelViewSet
 from rest_framework_simplejwt.tokens import RefreshToken
-from django.contrib.auth import get_user_model
 
+from .email_utils import email_generator
+from .permissions import IsAdminOrDeny
 from .serializers import (
     UserRegistrationSerializer,
     UserSerializer,
