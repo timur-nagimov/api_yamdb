@@ -44,6 +44,7 @@ class User(AbstractUser):
     def __str__(self):
         return self.username
 
+
 class Review(models.Model):
     title = models.ForeignKey(
         Title,
