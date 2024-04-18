@@ -1,3 +1,4 @@
+from datetime import timedelta
 from pathlib import Path
 
 
@@ -23,8 +24,20 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'reviews',
+    'rest_framework',
+    'rest_framework_simplejwt',
+    'reviews.apps.ReviewsConfig',
+    'api.apps.ApiConfig',
+
 ]
+
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": timedelta(days=20),
+    "AUTH_HEADER_TYPES": ("Bearer",),
+}
+
+EMAIL_BACKEND = 'django.core.mail.backends.filebased.EmailBackend'
+EMAIL_FILE_PATH = BASE_DIR / 'sent_emails'
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',

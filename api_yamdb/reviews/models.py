@@ -1,13 +1,16 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 
+
 class Category(models.Model):
     name = models.CharField(max_length=50)
     slug = models.SlugField()
 
+
 class Genre(models.Model):
     name = models.CharField(max_length=50)
     slug = models.SlugField()
+
 
 class Title(models.Model):
     name = models.CharField(max_length=100)
@@ -18,6 +21,7 @@ class Title(models.Model):
     )
     genres = models.ManyToManyField(Genre, related_name='titles')
 
+
 class User(AbstractUser):
     bio = models.TextField(blank=True)
     role = models.CharField(
@@ -25,12 +29,23 @@ class User(AbstractUser):
         choices=[('admin', 'Admin'), ('user', 'User')],
         default='user'
     )
+    email = models.EmailField(
+        'Почтовый адрес',
+        unique=True
+    )
+    confirmation_code = models.CharField(
+        'Код авторизации',
+        max_length=15,
+        null=True,
+        blank=True
+    )
 
     def is_admin(self):
         return self.role == 'admin'
 
     def __str__(self):
         return self.username
+
 
 class Review(models.Model):
     title = models.ForeignKey(
@@ -41,6 +56,7 @@ class Review(models.Model):
     author = models.ForeignKey(User, on_delete=models.CASCADE)
     score = models.IntegerField()
     pub_date = models.DateTimeField(auto_now_add=True)
+
 
 class Comment(models.Model):
     review = models.ForeignKey(Review, on_delete=models.CASCADE)
