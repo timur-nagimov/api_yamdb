@@ -3,10 +3,15 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework import mixins, viewsets
+from rest_framework import filters, permissions
+from rest_framework.viewsets import ModelViewSet
+
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import get_user_model
-from .serializers import UserRegistrationSerializer, UserSerializer, TokenObtainSerializer
-from django.core.mail import send_mail
+from .serializers import UserRegistrationSerializer, UserSerializer, TokenObtainSerializer, UserMeSerializer
+from .permissions import IsAdminOrDeny
+from rest_framework.pagination import PageNumberPagination
+
 
 from .email_utils import email_generator
 
@@ -27,9 +32,33 @@ class UserRegistrationView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
-class UserViewSet(mixins.ListModelMixin, mixins.CreateModelMixin, viewsets.GenericViewSet):
+class UserViewSet(ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
+    permission_classes = (IsAdminOrDeny,)
+
+    filter_backends = (filters.SearchFilter,)
+    search_fields = ('username',)
+    lookup_field = 'username'
+
+    http_method_names = ('get', 'post', 'patch', 'delete',)
+
+
+class UserMeView(mixins.RetrieveModelMixin, mixins.UpdateModelMixin, viewsets.GenericViewSet):
+    serializer_class = UserMeSerializer
+    permission_classes = (permissions.IsAuthenticated,)
+    pagination_class = None
+    http_method_names = ('get', 'patch')
+
+    def get_queryset(self):
+        return User.objects.filter(username=self.request.user.username)
+
+    def get_object(self):
+        # Retrieves the User object for the logged-in user.
+        queryset = self.get_queryset()
+        obj = queryset.get()
+        self.check_object_permissions(self.request, obj)
+        return obj
 
 
 class TokenObtainView(APIView):

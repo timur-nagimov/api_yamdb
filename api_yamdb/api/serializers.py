@@ -21,20 +21,21 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
 
 
 class UserSerializer(serializers.ModelSerializer):
+
     class Meta:
         model = User
-        exclude = ('confirmation_code', 'password')
+        fields = (
+            'username',
+            'first_name',
+            'last_name',
+            'email',
+            'bio',
+            'role',
+        )
 
-    def validate_email(self, value):
-        if User.objects.filter(email=value).exists():
-            raise serializers.ValidationError("Этот email уже используется.")
-        return value
 
-    def validate_username(self, value):
-        if User.objects.filter(username=value).exists():
-            raise serializers.ValidationError(
-                "Это имя пользователя уже используется.")
-        return value
+class UserMeSerializer(UserSerializer):
+    role = serializers.CharField(read_only=True)
 
 
 class TokenObtainSerializer(serializers.ModelSerializer):

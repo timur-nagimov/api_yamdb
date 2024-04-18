@@ -26,7 +26,11 @@ class User(AbstractUser):
     bio = models.TextField(blank=True)
     role = models.CharField(
         max_length=10,
-        choices=[('admin', 'Admin'), ('user', 'User')],
+        choices=[
+            ('admin', 'Admin'),
+            ('moderator', 'Moderator'),
+            ('user', 'User')
+        ],
         default='user'
     )
     email = models.EmailField(
@@ -41,7 +45,10 @@ class User(AbstractUser):
     )
 
     def is_admin(self):
-        return self.role == 'admin'
+        return self.role == 'admin' or self.is_superuser
+
+    def is_moder(self):
+        return self.role == 'moder'
 
     def __str__(self):
         return self.username
