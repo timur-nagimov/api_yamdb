@@ -6,13 +6,17 @@ from rest_framework import status, mixins, viewsets, filters, permissions
 from rest_framework.viewsets import ModelViewSet
 from rest_framework_simplejwt.tokens import RefreshToken
 
+
+from reviews.models import Review, Comment
 from .email_utils import email_generator
 from .permissions import IsAdminOrDeny
 from .serializers import (
     UserRegistrationSerializer,
     UserSerializer,
     TokenObtainSerializer,
-    UserMeSerializer
+    UserMeSerializer,
+    ReviewSerializer,
+    CommentSerializer
 )
 
 
@@ -84,3 +88,23 @@ class TokenObtainView(APIView):
             serializer.errors,
             status=status.HTTP_400_BAD_REQUEST
         )
+
+
+class ReviewViewSet(viewsets.ModelViewSet):
+    queryset = Review.objects.all()
+    serializer_class = ReviewSerializer
+
+
+class CommentViewSet(viewsets.ModelViewSet):
+    queryset = Comment.objects.all()
+    serializer_class = CommentSerializer
+
+    def get_queryset(self):
+        """
+        Опционально: фильтрация комментариев по id отзыва.
+        """
+        queryset = super().get_queryset()
+        review_id = self.request.query_params.get('review_id')
+        if review_id:
+            queryset = queryset.filter(review__id=review_id)
+        return queryset

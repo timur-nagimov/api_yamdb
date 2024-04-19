@@ -1,6 +1,8 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
 
+from reviews.models import Review, Comment
+
 
 User = get_user_model()
 
@@ -36,3 +38,15 @@ class UserMeSerializer(UserSerializer):
 class TokenObtainSerializer(serializers.Serializer):
     username = serializers.CharField(required=True)
     confirmation_code = serializers.CharField(required=True)
+
+
+class ReviewSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Review
+        fields = ('id', 'review', 'text', 'author', 'pub_date')
+
+
+class CommentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Comment
+        fields = ('id', 'title', 'text', 'author', 'score', 'pub_date')

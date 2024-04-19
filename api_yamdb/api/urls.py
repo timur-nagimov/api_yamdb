@@ -5,12 +5,16 @@ from .views import (
     UserRegistrationView,
     UserViewSet,
     TokenObtainView,
-    UserMeView
+    UserMeView,
+    ReviewViewSet,
+    CommentViewSet,
 )
 
 router = SimpleRouter()
 router.register(r'users', UserViewSet)
 me_view = UserMeView.as_view({'get': 'retrieve', 'patch': 'partial_update'})
+router.register(r'reviews', ReviewViewSet)
+router.register(r'comments', CommentViewSet)
 
 urlpatterns = [
     path('v1/users/me/', me_view, name='user-me'),
