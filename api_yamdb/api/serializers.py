@@ -33,8 +33,6 @@ class UserMeSerializer(UserSerializer):
     role = serializers.CharField(read_only=True)
 
 
-class TokenObtainSerializer(serializers.ModelSerializer):
-
-    class Meta:
-        model = User
-        fields = ('username', 'confirmation_code',)
+class TokenObtainSerializer(serializers.Serializer):
+    username = serializers.CharField(required=True)
+    confirmation_code = serializers.CharField(required=True)

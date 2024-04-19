@@ -67,8 +67,7 @@ class TokenObtainView(APIView):
     def post(self, request):
         serializer = TokenObtainSerializer(data=request.data)
         if serializer.is_valid():
-            # Извлечение токена из сериализатора
-            username = serializer.data['username']
+            username = serializer.validated_data['username']
             token = serializer.validated_data['confirmation_code']
             user = get_object_or_404(User, username=username)
             if token != user.confirmation_code:
