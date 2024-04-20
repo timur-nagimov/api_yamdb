@@ -2,32 +2,70 @@ from django.db import models
 from django.contrib.auth.models import AbstractUser
 
 class Category(models.Model):
-    name = models.CharField(max_length=50)
-    slug = models.SlugField()
+    name = models.CharField(max_length=256)
+    slug = models.SlugField(max_length=50, unique=True)
+
+    def __str__(self):
+        return self.name
+
 
 class Genre(models.Model):
-    name = models.CharField(max_length=50)
-    slug = models.SlugField()
+    name = models.CharField(max_length=256)
+    slug = models.SlugField(max_length=50, unique=True)
+
+    def __str__(self):
+        return self.name
 
 class Title(models.Model):
-    name = models.CharField(max_length=100)
+    name = models.CharField(max_length=256)
+    year = models.IntegerField()
+    description = models.TextField()
     category = models.ForeignKey(
         Category,
+        related_name='titles',
         on_delete=models.SET_NULL,
         null=True
     )
-    genres = models.ManyToManyField(Genre, related_name='titles')
+    genre = models.ManyToManyField(Genre, through='TitleGenre')
+
+    def __str__(self):
+        return self.name
+
+
+class TitleGenre(models.Model):
+    title = models.ForeignKey(Title, on_delete=models.CASCADE)
+    genre = models.ForeignKey(Genre, on_delete=models.CASCADE)
+
+    def __str__(self):
+        return f'{self.title} {self.genre}'
 
 class User(AbstractUser):
     bio = models.TextField(blank=True)
     role = models.CharField(
         max_length=10,
-        choices=[('admin', 'Admin'), ('user', 'User')],
+        choices=[
+            ('admin', 'Admin'),
+            ('moderator', 'Moderator'),
+            ('user', 'User')
+        ],
         default='user'
+    )
+    email = models.EmailField(
+        'Почтовый адрес',
+        unique=True
+    )
+    confirmation_code = models.CharField(
+        'Код авторизации',
+        max_length=15,
+        null=True,
+        blank=True
     )
 
     def is_admin(self):
-        return self.role == 'admin'
+        return self.role == 'admin' or self.is_superuser
+
+    def is_moder(self):
+        return self.role == 'moder'
 
     def __str__(self):
         return self.username
