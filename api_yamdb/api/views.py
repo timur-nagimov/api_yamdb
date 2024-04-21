@@ -57,19 +57,11 @@ class GenreViewSet(mixins.CreateModelMixin,
 
 class TitleViewSet(viewsets.ModelViewSet):
     queryset = Title.objects.all().annotate(
-        Avg('reviews__score')).order_by('name')
+        Avg('reviews__score'))
     permission_classes = (IsAdminOrReadOnly,)
     serializer_class = TitleSerializer
     http_method_names = ('get', 'post', 'patch', 'delete',)
     filterset_class = TitleFilter
-
-    def update(self, request, *args, **kwargs):
-        if request.method == 'PUT':
-            return Response(
-                {'detail': 'Метод не разрешен.'},
-                status=status.HTTP_405_METHOD_NOT_ALLOWED
-            )
-        return super().update(request, *args, **kwargs)
 
 
 class UserRegistrationView(APIView):
