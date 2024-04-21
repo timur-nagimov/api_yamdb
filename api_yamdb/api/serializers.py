@@ -1,3 +1,4 @@
+from django.shortcuts import get_object_or_404
 from rest_framework import serializers
 from rest_framework import serializers
 from rest_framework.serializers import SerializerMethodField
@@ -7,21 +8,13 @@ from django.contrib.auth import get_user_model
 from django.db import IntegrityError
 from django.db.models import Avg
 
-from reviews.models import Category, Genre, Title, Review, TitleGenre
+from reviews.models import Category, Genre, Title, Review, TitleGenre, Comment
 
 User = get_user_model()
 
 
 class CategorySerializer(serializers.ModelSerializer):
-    name = serializers.CharField(required=True, max_length=256)
-    slug = serializers.SlugField(required=True, max_length=50)
-
-    def create(self, validated_data):
-        try:
-            return super().create(validated_data)
-        except IntegrityError:
-            raise ValidationError(
-                {'slug': 'This slug already exists.'}, code='invalid')
+    lookup_field = 'slug'
 
     class Meta:
         model = Category
@@ -29,31 +22,23 @@ class CategorySerializer(serializers.ModelSerializer):
 
 
 class GenreSerializer(serializers.ModelSerializer):
-    name = serializers.CharField(required=True, max_length=256)
-    slug = serializers.SlugField(required=True, max_length=50)
-
-    def create(self, validated_data):
-        try:
-            return super().create(validated_data)
-        except IntegrityError:
-            raise ValidationError(
-                {'slug': 'This slug already exists.'}, code='invalid')
+    lookup_field = 'slug'
 
     class Meta:
         model = Genre
-        fields = ('name', 'slug')
+        fields = ('name', 'slug',)
 
 
-class CategoryField(serializers.RelatedField):
-    def to_internal_value(self, data):
-        try:
-            return Category.objects.get(name=data)
-        except Category.DoesNotExist:
-            raise serializers.ValidationError(
-                f"Category with name '{data}' does not exist.")
+class CategoryField(serializers.SlugRelatedField):
 
     def to_representation(self, value):
         serializer = CategorySerializer(value)
+        return serializer.data
+
+
+class GenreField(serializers.SlugRelatedField):
+    def to_representation(self, value):
+        serializer = GenreSerializer(value)
         return serializer.data
 
 
@@ -73,41 +58,24 @@ class StringToGenreField(serializers.StringRelatedField):
 
 
 class TitleSerializer(serializers.ModelSerializer):
-    name = serializers.CharField(required=True, max_length=256)
-    year = serializers.IntegerField(required=True)
-    description = serializers.CharField(required=False)
-    genre = StringToGenreField(many=True)
-    category = CategoryField(queryset=Category.objects.all())
-    rating = SerializerMethodField()
+    category = CategoryField(
+        slug_field='slug',
+        queryset=Category.objects.all(),
+        required=False
+    )
+    genre = GenreField(
+        slug_field='slug',
+        queryset=Genre.objects.all(),
+        many=True
+    )
+    rating = serializers.IntegerField(
+        source='reviews__score__avg',
+        read_only=True
+    )
 
     class Meta:
         model = Title
-        fields = ('id', 'name', 'year', 'rating',
-                  'description', 'genre', 'category')
-
-    def validate_year(self, value):
-        if value > timezone.now().year:
-            raise serializers.ValidationError(
-                'Год выпуска не может быть больше текущего года')
-        return value
-
-    def create(self, validated_data):
-        genres_data = validated_data.pop('genre')
-        title = Title.objects.create(**validated_data)
-        for genre_data in genres_data:
-            current_genre, status = Genre.objects.get_or_create(
-                name=genre_data)
-            TitleGenre.objects.create(genre=current_genre, title=title)
-        return title
-
-    def get_rating(self, obj):
-        reviews = obj.review_set.all()
-        average_rating = reviews.aggregate(Avg('score'))['score__avg']
-
-        if average_rating is None:
-            return 0
-
-        return round(average_rating, 2)
+        fields = '__all__'
 
 
 class UserRegistrationSerializer(serializers.ModelSerializer):
@@ -139,19 +107,8 @@ class UserMeSerializer(UserSerializer):
 
 
 class TokenObtainSerializer(serializers.Serializer):
-    username = serializers.CharField()
-    confirmation_code = serializers.CharField()
-
-    def validate(self, data):
-        username = data.get('username')
-        confirmation_code = data.get('confirmation_code')
-        user = User.objects.filter(username=username).first()
-
-        if user and user.confirmation_code == confirmation_code:
-            return data
-        else:
-            raise serializers.ValidationError(
-                "Invalid username or confirmation code")
+    username = serializers.CharField(required=True)
+    confirmation_code = serializers.CharField(required=True)
 
 
 class ReviewSerializer(serializers.ModelSerializer):
@@ -161,13 +118,34 @@ class ReviewSerializer(serializers.ModelSerializer):
         slug_field='username',
         read_only=True
     )
-    title = serializers.SlugRelatedField(
-        slug_field='name',
-        queryset=Title.objects.all(),
-        required=False  
-    )
-    
 
     class Meta:
         model = Review
-        fields = ('id', 'title', 'text', 'author', 'score', 'pub_date')
+        fields = ('__all__')
+        read_only_fields = ('title', 'author')
+
+    def validate(self, data):
+        title = get_object_or_404(
+            Title, id=self.context['view'].kwargs.get('title_id'))
+        if (
+            self.context.get('request').method != 'PATCH'
+            and title.reviews.filter(
+                author=self.context.get('request').user
+            ).exists()
+        ):
+            raise ValidationError('Вы не можете оставлять более'
+                                  'одного отзыва на одно произведение!')
+
+        return data
+
+
+class CommentSerializer(serializers.ModelSerializer):
+    author = serializers.SlugRelatedField(
+        slug_field='username',
+        read_only=True
+    )
+
+    class Meta:
+        fields = '__all__'
+        model = Comment
+        read_only_fields = ('review',)

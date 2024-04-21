@@ -1,5 +1,6 @@
-from django.db import models
 from django.contrib.auth.models import AbstractUser
+from django.db import models
+
 
 class Category(models.Model):
     name = models.CharField(max_length=256)
@@ -15,6 +16,7 @@ class Genre(models.Model):
 
     def __str__(self):
         return self.name
+
 
 class Title(models.Model):
     name = models.CharField(max_length=256)
@@ -38,6 +40,7 @@ class TitleGenre(models.Model):
 
     def __str__(self):
         return f'{self.title} {self.genre}'
+
 
 class User(AbstractUser):
     bio = models.TextField(blank=True)
@@ -65,23 +68,34 @@ class User(AbstractUser):
         return self.role == 'admin' or self.is_superuser
 
     def is_moder(self):
-        return self.role == 'moder'
+        return self.role == 'moderator'
 
     def __str__(self):
         return self.username
 
+
 class Review(models.Model):
     title = models.ForeignKey(
         Title,
-        on_delete=models.CASCADE
+        on_delete=models.CASCADE,
+        related_name='reviews'
     )
     text = models.TextField()
     author = models.ForeignKey(User, on_delete=models.CASCADE)
     score = models.IntegerField()
     pub_date = models.DateTimeField(auto_now_add=True)
 
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['author', 'title'], name='author_title_unique'
+            )
+        ]
+
+
 class Comment(models.Model):
-    review = models.ForeignKey(Review, on_delete=models.CASCADE)
+    review = models.ForeignKey(
+        Review, on_delete=models.CASCADE, related_name='comments')
     text = models.TextField()
     author = models.ForeignKey(User, on_delete=models.CASCADE)
     pub_date = models.DateTimeField(auto_now_add=True)
