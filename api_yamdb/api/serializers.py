@@ -1,14 +1,9 @@
 from django.shortcuts import get_object_or_404
-from rest_framework import serializers
-from rest_framework import serializers
-from rest_framework.serializers import SerializerMethodField
-from rest_framework.exceptions import ValidationError
-from django.utils import timezone
 from django.contrib.auth import get_user_model
-from django.db import IntegrityError
-from django.db.models import Avg
+from rest_framework import serializers
+from rest_framework.exceptions import ValidationError
 
-from reviews.models import Category, Genre, Title, Review, TitleGenre, Comment
+from reviews.models import Category, Genre, Title, Review, Comment
 
 User = get_user_model()
 
@@ -54,10 +49,11 @@ class StringToGenreField(serializers.StringRelatedField):
             return Genre.objects.get(name=data)
         except Genre.DoesNotExist:
             raise serializers.ValidationError(
-                f"Genre with name '{data}' does not exist.")
+                f"Жанр '{data}' не существует.")
 
 
 class TitleSerializer(serializers.ModelSerializer):
+    description = serializers.CharField(required=False)
     category = CategoryField(
         slug_field='slug',
         queryset=Category.objects.all(),
@@ -72,6 +68,13 @@ class TitleSerializer(serializers.ModelSerializer):
         source='reviews__score__avg',
         read_only=True
     )
+
+    def validate_genre(self, value):
+        if not value:
+            raise serializers.ValidationError(
+                'Список жанров не может быть пустым'
+            )
+        return value
 
     class Meta:
         model = Title

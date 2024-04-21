@@ -7,6 +7,7 @@ from django.utils.dateparse import parse_datetime
 
 from reviews.models import Category, Genre, Title, User, Review, Comment
 
+
 class Command(BaseCommand):
 
     def handle(self, *args, **options):
