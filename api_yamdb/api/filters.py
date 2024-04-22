@@ -11,7 +11,6 @@ class TitleFilter(FilterSet):
     genre = CharFilter(method=filter_by_slug)
     category = CharFilter(method=filter_by_slug)
     name = CharFilter(lookup_expr='icontains')
-    year = NumberFilter()
 
     class Meta:
         model = Title
