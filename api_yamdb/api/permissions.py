@@ -29,8 +29,7 @@ class AllowGetOrIsAdminOrDeny(permissions.BasePermission):
     def has_permission(self, request, view):
         if request.method == 'GET':
             return True
-        else:
-            return request.user.is_authenticated and request.user.is_admin
+        return request.user.is_authenticated and request.user.is_admin()
 
 
 class IsAuthorOrHasAccess(permissions.BasePermission):
@@ -53,6 +52,4 @@ class IsAuthorOrHasAccess(permissions.BasePermission):
 class IsAdminOrDeny(permissions.BasePermission):
 
     def has_permission(self, request, view):
-        is_admin = request.user.is_authenticated and request.user.is_admin
-
-        return is_admin
+        return request.user.is_authenticated and request.user.is_admin()

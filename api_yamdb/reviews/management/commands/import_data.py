@@ -22,35 +22,60 @@ class Command(BaseCommand):
 
     def import_categories(self, filename):
         try:
-            with open(filename, encoding='utf-8') as file:
-                reader = csv.DictReader(file)
-                for row in reader:
+            file = open(filename, encoding='utf-8')
+        except IOError as e:
+            self.stdout.write(self.style.ERROR(
+                f'Ошибка при открытии файла {filename}: {e}'))
+            return
+
+        with file:
+            reader = csv.DictReader(file)
+            for row in reader:
+                try:
                     Category.objects.update_or_create(
                         id=row['id'],
                         defaults={'name': row['name'], 'slug': row['slug']}
                     )
-            self.stdout.write(self.style.SUCCESS('Импортирован category.csv'))
-        except Exception as e:
-            self.stdout.write(self.style.ERROR(f'Ошибка category.csv: {e}'))
+                except Exception as e:
+                    self.stdout.write(self.style.ERROR(
+                        f'Ошибка при обновлении категории {row["name"]}: {e}'))
+
+        self.stdout.write(self.style.SUCCESS('Импортирован category.csv'))
 
     def import_genres(self, filename):
         try:
-            with open(filename, encoding='utf-8') as file:
-                reader = csv.DictReader(file)
-                for row in reader:
+            file = open(filename, encoding='utf-8')
+        except IOError as e:
+            self.stdout.write(self.style.ERROR(
+                f'Ошибка при открытии файла {filename}: {e}'))
+            return
+
+        with file:
+            reader = csv.DictReader(file)
+            for row in reader:
+                try:
                     Genre.objects.update_or_create(
                         id=row['id'],
                         defaults={'name': row['name'], 'slug': row['slug']}
                     )
-            self.stdout.write(self.style.SUCCESS('Импортирован genre.csv'))
-        except Exception as e:
-            self.stdout.write(self.style.ERROR(f'Ошибка genre.csv: {e}'))
+                except Exception as e:
+                    self.stdout.write(self.style.ERROR(
+                        f'Ошибка при обновлении жанра {row["name"]}: {e}'))
+
+        self.stdout.write(self.style.SUCCESS('Импортирован genre.csv'))
 
     def import_titles(self, filename):
         try:
-            with open(filename, encoding='utf-8') as file:
-                reader = csv.DictReader(file)
-                for row in reader:
+            file = open(filename, encoding='utf-8')
+        except IOError as e:
+            self.stdout.write(self.style.ERROR(
+                f'Ошибка при открытии файла {filename}: {e}'))
+            return
+
+        with file:
+            reader = csv.DictReader(file)
+            for row in reader:
+                try:
                     category = Category.objects.get(id=row['category'])
                     Title.objects.update_or_create(
                         id=row['id'],
@@ -59,15 +84,27 @@ class Command(BaseCommand):
                             'category': category
                         }
                     )
-            self.stdout.write(self.style.SUCCESS('Импортирован titles.csv'))
-        except Exception as e:
-            self.stdout.write(self.style.ERROR(f'Ошибка titles.csv: {e}'))
+                except Category.DoesNotExist:
+                    self.stdout.write(self.style.ERROR(
+                        f'Категория не найдена: {row["category"]}'))
+                except Exception as e:
+                    self.stdout.write(self.style.ERROR(
+                        f'Ошибка при обновлении титула {row["name"]}: {e}'))
+
+        self.stdout.write(self.style.SUCCESS('Импортирован titles.csv'))
 
     def import_users(self, filename):
         try:
-            with open(filename, encoding='utf-8') as file:
-                reader = csv.DictReader(file)
-                for row in reader:
+            file = open(filename, encoding='utf-8')
+        except IOError as e:
+            self.stdout.write(self.style.ERROR(
+                f'Ошибка при открытии файла {filename}: {e}'))
+            return
+
+        with file:
+            reader = csv.DictReader(file)
+            for row in reader:
+                try:
                     User.objects.update_or_create(
                         id=row['id'],
                         defaults={
@@ -79,15 +116,25 @@ class Command(BaseCommand):
                             'last_name': row.get('last_name', '')
                         }
                     )
-            self.stdout.write(self.style.SUCCESS('Импортирован users.csv'))
-        except Exception as e:
-            self.stdout.write(self.style.ERROR(f'Ошибка users.csv: {e}'))
+                except Exception as e:
+                    self.stdout.write(self.style.ERROR(
+                        'Ошибка при обновлении пользователя'
+                        f'{row["username"]}: {e}'))
+
+        self.stdout.write(self.style.SUCCESS('Импортирован users.csv'))
 
     def import_reviews(self, filename):
         try:
-            with open(filename, encoding='utf-8') as file:
-                reader = csv.DictReader(file)
-                for row in reader:
+            file = open(filename, encoding='utf-8')
+        except IOError as e:
+            self.stdout.write(self.style.ERROR(
+                f'Ошибка при открытии файла {filename}: {e}'))
+            return
+
+        with file:
+            reader = csv.DictReader(file)
+            for row in reader:
+                try:
                     title = Title.objects.get(id=row['title_id'])
                     author = User.objects.get(id=row['author'])
                     Review.objects.update_or_create(
@@ -100,15 +147,26 @@ class Command(BaseCommand):
                             'pub_date': parse_datetime(row['pub_date'])
                         }
                     )
-            self.stdout.write(self.style.SUCCESS('Импортирован review.csv'))
-        except Exception as e:
-            self.stdout.write(self.style.ERROR(f'Ошибка review.csv: {e}'))
+                except (Title.DoesNotExist, User.DoesNotExist) as e:
+                    self.stdout.write(self.style.ERROR(f'Ошибка: {e}'))
+                except Exception as e:
+                    self.stdout.write(self.style.ERROR(
+                        f'Ошибка при обновлении отзыва {row["id"]}: {e}'))
+
+        self.stdout.write(self.style.SUCCESS('Импортирован review.csv'))
 
     def import_comments(self, filename):
         try:
-            with open(filename, encoding='utf-8') as file:
-                reader = csv.DictReader(file)
-                for row in reader:
+            file = open(filename, encoding='utf-8')
+        except IOError as e:
+            self.stdout.write(self.style.ERROR(
+                f'Ошибка при открытии файла {filename}: {e}'))
+            return
+
+        with file:
+            reader = csv.DictReader(file)
+            for row in reader:
+                try:
                     review = Review.objects.get(id=row['review_id'])
                     author = User.objects.get(id=row['author'])
                     Comment.objects.update_or_create(
@@ -120,26 +178,34 @@ class Command(BaseCommand):
                             'pub_date': parse_datetime(row['pub_date'])
                         }
                     )
-            self.stdout.write(self.style.SUCCESS('Импортирован comments.csv'))
-        except Exception as e:
-            self.stdout.write(self.style.ERROR(f'Ошибка comments.csv: {e}'))
+                except (Review.DoesNotExist, User.DoesNotExist) as e:
+                    self.stdout.write(self.style.ERROR(f'Ошибка: {e}'))
+                except Exception as e:
+                    self.stdout.write(self.style.ERROR(
+                        f'Ошибка при обновлении комментария {row["id"]}: {e}'))
+
+        self.stdout.write(self.style.SUCCESS('Импортирован comments.csv'))
 
     def import_genre_titles(self, filename):
         try:
-            with open(filename, encoding='utf-8') as file:
-                reader = csv.DictReader(file)
-                for row in reader:
+            file = open(filename, encoding='utf-8')
+        except IOError as e:
+            self.stdout.write(self.style.ERROR(
+                f'Ошибка при открытии файла {filename}: {e}'))
+            return
+
+        with file:
+            reader = csv.DictReader(file)
+            for row in reader:
+                try:
                     title = Title.objects.get(id=row['title_id'])
                     genre = Genre.objects.get(id=row['genre_id'])
                     title.genres.add(genre)
-            self.stdout.write(
-                self.style.SUCCESS(
-                    'Импортирован genre_titles.csv'
-                )
-            )
-        except Exception as e:
-            self.stdout.write(
-                self.style.ERROR(
-                    f'Ошибка genre_titles.csv: {e}'
-                )
-            )
+                except (Title.DoesNotExist, Genre.DoesNotExist) as e:
+                    self.stdout.write(self.style.ERROR(f'Ошибка: {e}'))
+                except Exception as e:
+                    self.stdout.write(self.style.ERROR(
+                        'Ошибка при добавлении жанра к титулу '
+                        f'{row["title_id"]}: {e}'))
+
+        self.stdout.write(self.style.SUCCESS('Импортирован genre_titles.csv'))

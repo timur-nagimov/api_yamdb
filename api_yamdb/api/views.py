@@ -3,6 +3,7 @@ from django.db.models import Avg
 from rest_framework import mixins, viewsets, filters, status, permissions
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.response import Response
+from rest_framework.decorators import action
 from rest_framework.views import APIView
 from rest_framework.pagination import LimitOffsetPagination
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -37,7 +38,6 @@ class CategoryViewSet(mixins.CreateModelMixin,
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
     permission_classes = (AllowGetOrIsAdminOrDeny,)
-    pagination_class = LimitOffsetPagination
     filter_backends = (filters.SearchFilter,)
     search_fields = ('name',)
     lookup_field = 'slug'
@@ -57,34 +57,29 @@ class GenreViewSet(mixins.CreateModelMixin,
 
 class TitleViewSet(viewsets.ModelViewSet):
     queryset = Title.objects.all().annotate(
-        Avg('reviews__score')).order_by('name')
+        Avg('reviews__score'))
     permission_classes = (IsAdminOrReadOnly,)
     serializer_class = TitleSerializer
     http_method_names = ('get', 'post', 'patch', 'delete',)
     filterset_class = TitleFilter
 
-    def update(self, request, *args, **kwargs):
-        if request.method == 'PUT':
-            return Response(
-                {'detail': 'Метод не разрешен.'},
-                status=status.HTTP_405_METHOD_NOT_ALLOWED
-            )
-        return super().update(request, *args, **kwargs)
-
 
 class UserRegistrationView(APIView):
 
     def post(self, request):
+        username = request.data.get('username')
+        email = request.data.get('email')
+
         serializer = UserRegistrationSerializer(data=request.data)
-        if User.objects.filter(username=request.data.get('username'),
-                               email=request.data.get('email')).exists():
-            email_generator(request.data.get('username'))
-            return Response(request.data, status=status.HTTP_200_OK)
+        if User.objects.filter(username=username,
+                               email=email).exists():
+            email_generator(username)
+            return Response(request.data)
 
         serializer.is_valid(raise_exception=True)
         serializer.save()
-        email_generator(request.data.get('username'))
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        email_generator(username)
+        return Response(serializer.data)
 
 
 class UserViewSet(ModelViewSet):
@@ -98,44 +93,40 @@ class UserViewSet(ModelViewSet):
 
     http_method_names = ('get', 'post', 'patch', 'delete',)
 
+    @action(detail=False, methods=['get', 'patch'], url_path='me',
+            permission_classes=[permissions.IsAuthenticated],
+            serializer_class=UserMeSerializer)
+    def me(self, request):
+        user = self.request.user
 
-class UserMeView(mixins.RetrieveModelMixin,
-                 mixins.UpdateModelMixin,
-                 viewsets.GenericViewSet):
-    serializer_class = UserMeSerializer
-    permission_classes = (permissions.IsAuthenticated,)
-    pagination_class = None
-    http_method_names = ('get', 'patch')
-
-    def get_queryset(self):
-        return User.objects.filter(username=self.request.user.username)
-
-    def get_object(self):
-        self.check_object_permissions(self.request, self.get_queryset().get())
-        return self.get_queryset().get()
+        if request.method == 'GET':
+            serializer = self.get_serializer(user)
+            return Response(serializer.data)
+        elif request.method == 'PATCH':
+            serializer = self.get_serializer(
+                user, data=request.data, partial=True)
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data)
+            else:
+                return Response(serializer.errors,
+                                status=status.HTTP_400_BAD_REQUEST)
 
 
 class TokenObtainView(APIView):
 
     def post(self, request):
-        serializer = TokenObtainSerializer(data=request.data)
-        if serializer.is_valid():
-            username = serializer.validated_data['username']
-            token = serializer.validated_data['confirmation_code']
-            user = get_object_or_404(User, username=username)
-            if token != user.confirmation_code:
-                return Response(
-                    serializer.errors,
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-            token = RefreshToken.for_user(user)
-            return Response(
-                {'token': str(token.access_token)},
-                status=status.HTTP_200_OK
-            )
+        serializer = TokenObtainSerializer(
+            data=request.data, context={'request': request})
+
+        serializer.is_valid(raise_exception=True)
+
+        user = serializer.validated_data['user']
+
+        token = RefreshToken.for_user(user)
         return Response(
-            serializer.errors,
-            status=status.HTTP_400_BAD_REQUEST
+            {'token': str(token.access_token)},
+            status=status.HTTP_200_OK
         )
 
 
@@ -145,14 +136,16 @@ class ReviewViewSet(viewsets.ModelViewSet):
     pagination_class = LimitOffsetPagination
     http_method_names = ('get', 'post', 'patch', 'delete')
 
-    def get_queryset(self):
+    def get_title(self):
         return get_object_or_404(
-            Title, id=self.kwargs.get('title_id')).reviews.all()
+            Title, id=self.kwargs.get('title_id'))
+
+    def get_queryset(self):
+        return self.get_title().reviews.all()
 
     def perform_create(self, serializer):
         serializer.save(author=self.request.user,
-                        title=get_object_or_404(
-                            Title, id=self.kwargs.get('title_id')))
+                        title=self.get_title())
 
 
 class CommentViewSet(ModelViewSet):
@@ -161,7 +154,10 @@ class CommentViewSet(ModelViewSet):
     http_method_names = ('get', 'post', 'patch', 'delete')
 
     def get_review(self):
-        return get_object_or_404(Review, pk=self.kwargs.get('review_id'))
+        review_id = self.kwargs.get('review_id')
+        title_id = self.kwargs.get('title_id')
+
+        return get_object_or_404(Review, pk=review_id, title_id=title_id)
 
     def get_queryset(self):
         return self.get_review().comments.all()
