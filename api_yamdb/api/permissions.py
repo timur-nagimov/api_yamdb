@@ -8,7 +8,7 @@ class IsAdminOrReadOnly(permissions.BasePermission):
             return True
         return (
             request.user.is_authenticated and (request.user.is_staff
-                                               or request.user.is_admin())
+                                               or request.user.is_admin)
         )
 
 
@@ -19,8 +19,8 @@ class HasPrevilegesOrReadOnly(permissions.BasePermission):
         is_auth = request.user.is_authenticated
 
         return is_safe_method or is_auth and (
-            request.user.is_moder()
-            or request.user.is_admin()
+            request.user.is_moder
+            or request.user.is_admin
         )
 
 
@@ -30,7 +30,7 @@ class AllowGetOrIsAdminOrDeny(permissions.BasePermission):
         if request.method == 'GET':
             return True
         else:
-            return request.user.is_authenticated and request.user.is_admin()
+            return request.user.is_authenticated and request.user.is_admin
 
 
 class IsAuthorOrHasAccess(permissions.BasePermission):
@@ -44,8 +44,8 @@ class IsAuthorOrHasAccess(permissions.BasePermission):
         is_auth = request.user.is_authenticated
 
         return is_safe_method or is_auth and (
-            request.user.is_moder()
-            or request.user.is_admin()
+            request.user.is_moder
+            or request.user.is_admin
             or obj.author == request.user
         )
 
@@ -53,6 +53,6 @@ class IsAuthorOrHasAccess(permissions.BasePermission):
 class IsAdminOrDeny(permissions.BasePermission):
 
     def has_permission(self, request, view):
-        is_admin = request.user.is_authenticated and request.user.is_admin()
+        is_admin = request.user.is_authenticated and request.user.is_admin
 
         return is_admin

@@ -32,6 +32,7 @@ class CategoryField(serializers.SlugRelatedField):
 
 
 class GenreField(serializers.SlugRelatedField):
+
     def to_representation(self, value):
         serializer = GenreSerializer(value)
         return serializer.data
@@ -53,16 +54,16 @@ class StringToGenreField(serializers.StringRelatedField):
 
 
 class TitleSerializer(serializers.ModelSerializer):
-    description = serializers.CharField(required=False)
     category = CategoryField(
         slug_field='slug',
         queryset=Category.objects.all(),
-        required=False
+        required=True
     )
     genre = GenreField(
         slug_field='slug',
         queryset=Genre.objects.all(),
-        many=True
+        many=True,
+        required=True
     )
     rating = serializers.IntegerField(
         source='reviews__score__avg',
@@ -76,6 +77,11 @@ class TitleSerializer(serializers.ModelSerializer):
             )
         return value
 
+    def validate_year(self, value):
+        year = Title(year=value)
+        year.clean()
+        return value
+
     class Meta:
         model = Title
         fields = '__all__'
@@ -83,16 +89,14 @@ class TitleSerializer(serializers.ModelSerializer):
 
 class UserRegistrationSerializer(serializers.ModelSerializer):
 
-    def validate_username(self, value):
-        if value == 'me':
-            raise serializers.ValidationError(
-                '`me` нельзя использовать в качестве имени!',
-            )
-        return value
-
     class Meta:
         fields = ('username', 'email')
         model = User
+
+    def validate_username(self, value):
+        user = User(username=value)
+        user.clean()
+        return value
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -116,7 +120,6 @@ class TokenObtainSerializer(serializers.Serializer):
 
 class ReviewSerializer(serializers.ModelSerializer):
     text = serializers.CharField(required=True)
-    score = serializers.IntegerField(min_value=1, max_value=10, required=True)
     author = serializers.SlugRelatedField(
         slug_field='username',
         read_only=True
@@ -151,4 +154,3 @@ class CommentSerializer(serializers.ModelSerializer):
     class Meta:
         fields = '__all__'
         model = Comment
-        read_only_fields = ('review',)
