@@ -8,7 +8,6 @@ from .views import (
     UserRegistrationView,
     UserViewSet,
     TokenObtainView,
-    # UserMeView,
     ReviewViewSet,
     CommentViewSet
 )

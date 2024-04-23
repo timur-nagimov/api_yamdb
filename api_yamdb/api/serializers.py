@@ -70,7 +70,6 @@ class TitleSerializer(serializers.ModelSerializer):
         read_only=True
     )
 
-
     def validate_genre(self, value):
         if not value:
             raise serializers.ValidationError(
@@ -82,7 +81,6 @@ class TitleSerializer(serializers.ModelSerializer):
         year = Title(year=value)
         year.clean()
         return value
-
 
     class Meta:
         model = Title
