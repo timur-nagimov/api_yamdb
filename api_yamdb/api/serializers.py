@@ -55,7 +55,6 @@ class StringToGenreField(serializers.StringRelatedField):
 
 
 class TitleSerializer(serializers.ModelSerializer):
-    description = serializers.CharField(required=False)
     category = CategoryField(
         slug_field='slug',
         queryset=Category.objects.all()
@@ -71,6 +70,20 @@ class TitleSerializer(serializers.ModelSerializer):
         read_only=True
     )
 
+
+    def validate_genre(self, value):
+        if not value:
+            raise serializers.ValidationError(
+                'Список жанров не может быть пустым'
+            )
+        return value
+
+    def validate_year(self, value):
+        year = Title(year=value)
+        year.clean()
+        return value
+
+
     class Meta:
         model = Title
         fields = '__all__'
@@ -78,16 +91,14 @@ class TitleSerializer(serializers.ModelSerializer):
 
 class UserRegistrationSerializer(serializers.ModelSerializer):
 
-    def validate_username(self, value):
-        if value == 'me':
-            raise serializers.ValidationError(
-                '`me` нельзя использовать в качестве имени!',
-            )
-        return value
-
     class Meta:
         fields = ('username', 'email')
         model = User
+
+    def validate_username(self, value):
+        user = User(username=value)
+        user.clean()
+        return value
 
 
 class UserSerializer(serializers.ModelSerializer):
