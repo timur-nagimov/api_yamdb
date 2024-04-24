@@ -70,19 +70,12 @@ class TitleSerializer(serializers.ModelSerializer):
         read_only=True
     )
 
-
     def validate_genre(self, value):
         if not value:
             raise serializers.ValidationError(
                 'Список жанров не может быть пустым'
             )
         return value
-
-    def validate_year(self, value):
-        year = Title(year=value)
-        year.clean()
-        return value
-
 
     class Meta:
         model = Title
@@ -94,11 +87,6 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
     class Meta:
         fields = ('username', 'email')
         model = User
-
-    def validate_username(self, value):
-        user = User(username=value)
-        user.clean()
-        return value
 
 
 class UserSerializer(serializers.ModelSerializer):
