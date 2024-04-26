@@ -13,7 +13,7 @@ def email_generator(username):
 
     email_subject = 'Ваш код подтверждения'
     email_body = f'Ваш код подтверждения: {user.confirmation_code}'
-    from_email = f"noreply@{settings.DOMAIN_NAME}"
+    from_email = settings.DEFAULT_FROM_EMAIL
 
     send_mail(
         email_subject,

@@ -93,22 +93,21 @@ class UserViewSet(ModelViewSet):
 
     http_method_names = ('get', 'post', 'patch', 'delete',)
 
-    @action(detail=False, methods=['get', 'patch'], url_path='me',
-            permission_classes=[permissions.IsAuthenticated],
+    @action(detail=False, methods=('get', 'patch'), url_path='me',
+            permission_classes=(permissions.IsAuthenticated,),
             serializer_class=UserMeSerializer)
     def me(self, request):
         user = self.request.user
+        serializer = self.get_serializer(
+            user, data=request.data, partial=True)
 
         if request.method == 'GET':
             serializer = self.get_serializer(user)
             return Response(serializer.data)
-        serializer = self.get_serializer(
-            user, data=request.data, partial=True)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
-        return Response(serializer.errors,
-                        status=status.HTTP_400_BAD_REQUEST)
+
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data)
 
 
 class TokenObtainView(APIView):

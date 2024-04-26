@@ -19,7 +19,6 @@ router_v1.register(r'genres', GenreViewSet, basename='genres')
 router_v1.register(r'titles', TitleViewSet, basename='titles')
 router_v1.register(r'users', UserViewSet, basename='users')
 
-# me_view = UserMeView.as_view({'get': 'retrieve', 'patch': 'partial_update'})
 
 router_v1.register(
     r'titles/(?P<title_id>\d+)/reviews', ReviewViewSet, basename='reviews'

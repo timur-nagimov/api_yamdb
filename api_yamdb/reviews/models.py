@@ -161,7 +161,7 @@ class Review(models.Model):
         verbose_name='Автор'
     )
     score = models.PositiveIntegerField(
-        validators=[MinValueValidator(1), MaxValueValidator(10)],
+        validators=(MinValueValidator(1), MaxValueValidator(10)),
         blank=False,
         verbose_name='Оценка'
     )
