@@ -77,11 +77,6 @@ class TitleSerializer(serializers.ModelSerializer):
             )
         return value
 
-    def validate_year(self, value):
-        year = Title(year=value)
-        year.clean()
-        return value
-
     class Meta:
         model = Title
         fields = '__all__'
@@ -92,11 +87,6 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
     class Meta:
         fields = ('username', 'email')
         model = User
-
-    def validate_username(self, value):
-        user = User(username=value)
-        user.clean()
-        return value
 
 
 class UserSerializer(serializers.ModelSerializer):

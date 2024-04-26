@@ -1,10 +1,20 @@
-from django.core.validators import MinValueValidator, MaxValueValidator
+from django.core.validators import (
+    MinValueValidator,
+    MaxValueValidator,
+    RegexValidator
+)
 from django.contrib.auth.models import AbstractUser
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils import timezone
 
-from .constants import NAME_LENGTH, SLAG_LENGTH, ROLE_LENGTH, CODE_LENGTH
+from .constants import (
+    NAME_LENGTH,
+    SLAG_LENGTH,
+    ROLE_LENGTH,
+    CODE_LENGTH,
+    USER_LENGTH
+)
 
 
 class Category(models.Model):
@@ -41,9 +51,15 @@ class Genre(models.Model):
         return self.name
 
 
+def validate_year(value):
+    if value > timezone.now().year:
+        raise ValidationError('Год выпуска не может быть больше текущего года')
+
+
 class Title(models.Model):
     name = models.CharField(max_length=NAME_LENGTH, verbose_name='Название')
-    year = models.IntegerField(verbose_name='Год выхода')
+    year = models.IntegerField(
+        validators=(validate_year,), verbose_name='Год выхода')
     description = models.TextField(blank=True, verbose_name='Описание')
     category = models.ForeignKey(
         Category,
@@ -55,16 +71,6 @@ class Title(models.Model):
     genre = models.ManyToManyField(
         Genre, related_name='titles', verbose_name='Жанр')
 
-    def clean(self):
-        if self.year < 0:
-            raise ValidationError(
-                'Год выпуска не может быть отрицательным числом'
-            )
-        elif self.year > timezone.now().year:
-            raise ValidationError(
-                'Год выпуска не может быть больше текущего года'
-            )
-
     class Meta:
         verbose_name = 'произведение'
         verbose_name_plural = 'Произведения'
@@ -72,6 +78,11 @@ class Title(models.Model):
 
     def __str__(self):
         return self.name
+
+
+def validate_username(value):
+    if value == 'me':
+        raise ValidationError('Имя пользователя не может быть `me`.')
 
 
 class User(AbstractUser):
@@ -101,13 +112,28 @@ class User(AbstractUser):
         default='',
         blank=True,
     )
+    username = models.CharField(
+        'Имя пользователя',
+        max_length=USER_LENGTH,
+        unique=True,
+        validators=(
+            RegexValidator(
+                regex=r'^[\w.@+-]+$',
+                message='Имя пользователя может '
+                'содержать только буквы, цифры '
+                'и символы @/./+/-/_',
+                code='invalid_username',
+            ),
+            validate_username,
+        ),
+        error_messages={
+            'unique': 'Пользователь с таким именем уже существует.',
+        },
+    )
 
-    def clean(self):
-        super().clean()
-        if self.username == 'me':
-            raise ValidationError(
-                '`me` нельзя использовать в качестве имени!'
-            )
+    class Meta:
+        verbose_name = 'пользователь'
+        verbose_name_plural = 'Пользователи'
 
     @property
     def is_admin(self):
@@ -116,10 +142,6 @@ class User(AbstractUser):
     @property
     def is_moder(self):
         return self.role == 'moderator'
-
-    class Meta:
-        verbose_name = 'пользователь'
-        verbose_name_plural = 'Пользователи'
 
     def __str__(self):
         return self.username
@@ -151,7 +173,7 @@ class Review(models.Model):
     class Meta:
         constraints = [
             models.UniqueConstraint(
-                fields=['author', 'title'], name='author_title_unique'
+                fields=('author', 'title'), name='author_title_unique'
             )
         ]
         verbose_name = 'отзыв'
